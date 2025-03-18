@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Ease Checkout System</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        input {
+            width: 100%;
+            padding: 5px;
+        }
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+            background-color: rgba(72, 255, 0, 0.467);
+            color: white;
+            border: none;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 20px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+        }
+        table {
+            width: 80%;
+            margin: auto;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background: #007bff;
+            color: white;
+        }
+        td input {
+            width: 100%;
+            padding: 8px;
+            text-align: center;
+            border: none;
+            outline: none;
+            background: #f9f9f9;
+        }
+        td input:read-only {
+            background: #e9ecef;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .add-btn {
+            background: #28a745;
+            color:green;
+        }
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .generate-btn {
+            background: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        .submit-btn {
+            background: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        .add-btn:hover {
+            background: #218838;
+        }
+        .remove-btn:hover {
+            background: #c82333;
+        }
+        .generate-btn:hover {
+            background: #0056b3;
+        }
+        .submit-btn:hover {
+            background: #0056b3;
+        }
+        #bill {
+            display: none;
+            width: 60%;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            text-align: left;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Bill Ease Checkout System</h2>
+
+    <table id="checkoutTable">
+        <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Discount (%)</th>
+                <th>Total</th>
+                <th>Final Amount</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" class="product-id" oninput="fetchProductDetails(this)"></td>
+                <td><input type="text" class="product-name" readonly></td>
+                <td><input type="text" class="product-price" readonly></td>
+                <td><input type="number" class="product-qty" value="1" min="1" oninput="updateTotal(this)"></td>
+                <td><input type="number" class="product-discount" value="0" min="0" max="100" oninput="updateTotal(this)"></td>
+                <td><input type="text" class="product-total" readonly></td>
+                <td><input type="text" class="product-final-amount" readonly></td>
+                <td><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button class="add-btn" onclick="addRow()">Add Product</button>
+    <br><br>
+    <div id="stock-message"></div>
+
+    <h3>Total Amount: <span id="totalAmount">0.00</span></h3>
+    <h3>Final Amount: <span id="finalAmount">0.00</span></h3>
+
+    <button class="generate-btn" onclick="generateBill()">Generate Bill</button>
+    <button class="generate-btn" onclick="proceedToCustomerDetails()">Proceed to Customer Details</button>
+
+    <!-- Bill Display Section -->
+    <div id="billSection" class="hidden">
+        <h3>Bill Details</h3>
+        <table id="billTable">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Discount (%)</th>
+                    <th>Total</th>
+                    <th>Final Amount</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <h3>Total Bill: ₹<span id="finalAmountDisplay">0</span></h3>
+    </div>
+
+    <!-- Customer Details Form -->
+    <div id="customerDetailsForm" class="hidden">
+        <h3>Customer Details</h3>
+        <form id="customerForm">
+            <label for="customerName">Name:</label>
+            <input type="text" id="customerName" name="customerName" required><br><br>
+            <label for="customerEmail">Email:</label>
+            <input type="email" id="customerEmail" name="customerEmail" required><br><br>
+            <label for="customerPhone">Phone:</label>
+            <input type="text" id="customerPhone" name="customerPhone" required><br><br>
+            <label for="paymentMethod">Payment Method:</label>
+            <select id="paymentMethod" name="paymentMethod" required>
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="online">Online</option>
+            </select><br><br>
+            <button type="button" class="submit-btn" onclick="submitCustomerDetails()">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        let billItems = [];
+
+        function fetchProductDetails(input) {
+            let productID = input.value.trim();
+            if (productID === "") return;
+
+            fetch(`fetch_product.php?product_id=${productID}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let row = input.closest("tr");
+                        row.querySelector(".product-name").value = data.product_name;
+                        row.querySelector(".product-price").value = data.selling_price;
+                        let qtyInput = row.querySelector(".product-qty");
+                        qtyInput.max = data.available_stock; // Set max stock limit
+                        qtyInput.value = 1;
+                        updateTotal(qtyInput);
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        }
+
+        function updateTotal(input) {
+            let row = input.closest("tr");
+            let price = parseFloat(row.querySelector(".product-price").value) || 0;
+            let qty = parseInt(row.querySelector(".product-qty").value) || 1;
+            let discount = parseFloat(row.querySelector(".product-discount").value) || 0;
+            let maxQty = parseInt(row.querySelector(".product-qty").max) || 1;
+
+            if (qty > maxQty) {
+                alert(`Quantity exceeds available stock. Max available: ${maxQty}`);
+                input.value = maxQty;
+                qty = maxQty;
+            }
+
+            let total = price * qty;
+            let finalAmount = total * (1 - discount / 100);
+            row.querySelector(".product-total").value = total.toFixed(2);
+            row.querySelector(".product-final-amount").value = finalAmount.toFixed(2);
+            updateGrandTotal();
+        }
+
+        function updateGrandTotal() {
+            let total = 0;
+            let finalAmount = 0;
+            document.querySelectorAll(".product-total").forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            document.querySelectorAll(".product-final-amount").forEach(input => {
+                finalAmount += parseFloat(input.value) || 0;
+            });
+            document.getElementById("totalAmount").innerText = total.toFixed(2);
+            document.getElementById("finalAmount").innerText = finalAmount.toFixed(2);
+        }
+
+        function addRow() {
+            let table = document.getElementById("checkoutTable").getElementsByTagName("tbody")[0];
+            let newRow = table.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" class="product-id" oninput="fetchProductDetails(this)"></td>
+                <td><input type="text" class="product-name" readonly></td>
+                <td><input type="text" class="product-price" readonly></td>
+                <td><input type="number" class="product-qty" value="1" min="1" oninput="updateTotal(this)"></td>
+                <td><input type="number" class="product-discount" value="0" min="0" max="100" oninput="updateTotal(this)"></td>
+                <td><input type="text" class="product-total" readonly></td>
+                <td><input type="text" class="product-final-amount" readonly></td>
+                <td><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+            `;
+        }
+
+        function removeRow(button) {
+            let row = button.closest("tr");
+            row.remove();
+            updateGrandTotal();
+        }
+
+        function generateBill() {
+            billItems = [];
+            document.querySelectorAll("#checkoutTable tbody tr").forEach(row => {
+                let productID = row.querySelector(".product-id").value;
+                let productName = row.querySelector(".product-name").value;
+                let productPrice = parseFloat(row.querySelector(".product-price").value);
+                let productQty = parseInt(row.querySelector(".product-qty").value);
+                let productDiscount = parseFloat(row.querySelector(".product-discount").value);
+                let productTotal = parseFloat(row.querySelector(".product-total").value);
+                let productFinalAmount = parseFloat(row.querySelector(".product-final-amount").value);
+
+                billItems.push({
+                    product_id: productID,
+                    product_name: productName,
+                    price: productPrice,
+                    quantity: productQty,
+                    discount: productDiscount,
+                    total: productTotal,
+                    final_amount: productFinalAmount
+                });
+            });
+
+            let billSection = document.getElementById("billSection");
+            let billTableBody = document.querySelector("#billTable tbody");
+            billTableBody.innerHTML = "";
+
+            billItems.forEach(item => {
+                let row = billTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${item.product_name}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.price.toFixed(2)}</td>
+                    <td>${item.discount.toFixed(2)}</td>
+                    <td>${item.total.toFixed(2)}</td>
+                    <td>${item.final_amount.toFixed(2)}</td>
+                `;
+            });
+
+            document.getElementById("finalAmountDisplay").innerText = document.getElementById("finalAmount").innerText;
+            billSection.classList.remove("hidden");
+        }
+
+        function proceedToCustomerDetails() {
+            document.getElementById("customerDetailsForm").classList.remove("hidden");
+        }
+
+        function submitCustomerDetails() {
+            let customerName = document.getElementById("customerName").value;
+            let customerEmail = document.getElementById("customerEmail").value;
+            let customerPhone = document.getElementById("customerPhone").value;
+            let paymentMethod = document.getElementById("paymentMethod").value;
+            let finalAmount = parseFloat(document.getElementById("finalAmount").innerText);
+
+            let salesData = {
+                customer_name: customerName,
+                customer_email: customerEmail,
+                customer_phone: customerPhone,
+                payment_method: paymentMethod,
+                final_amount: finalAmount,
+                items: billItems
+            };
+
+            // Send salesData to the server to update the sales table
+            fetch('update_sales.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(salesData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Sales data updated successfully!");
+                    // Reset the form and bill section
+                    document.getElementById("customerForm").reset();
+                    document.getElementById("billSection").classList.add("hidden");
+                    document.getElementById("customerDetailsForm").classList.add("hidden");
+
+                    // Generate and download the PDF
+                    fetch('generate_pdf.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(salesData)
+                    })
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = 'bill.pdf';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                    })
+                    .catch(error => console.error("Error generating PDF:", error));
+                } else if (data.message === 'Customer does not exist. Please add the customer first.') {
+                    if (confirm("Customer does not exist. Would you like to add the customer?")) {
+                        window.location.href = 'add_customer.html';
+                    }
+                } else {
+                    alert("Failed to update sales data: " + data.message);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    </script>
+
+</body>
+</html>
